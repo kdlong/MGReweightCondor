@@ -1,0 +1,19 @@
+Executable = /nfs_scratch/kdlong/reweight_files/run_madgraph_reweight_jobnumber.sh
+                  output = /nfs_scratch/kdlong/reweight_files/reweight_logs/log_output_jobnumber
+                  error = /nfs_scratch/kdlong/reweight_files/reweight_logs/log_error_jobnumber
+                  log = /nfs_scratch/kdlong/reweight_files/reweight_logs/log_log_jobnumber
+                  
+                  should_transfer_files = YES
+                  when_to_transfer_output = ON_EXIT
+                  transfer_input_files = process.tgz,madgraph.tgz,gen_crossxhtml.py,me5_configuration.txt,run_madgraph_reweight.txt,unweighted_events_jobnumber.lhe
+
+                  transfer_output_files = unweighted_events_jobnumber.lhe.gz,run_madgraph_reweight_jobnumber.log
+                  Universe = vanilla
+                  notification = Error
+                  Initialdir = /nfs_scratch/kdlong/reweight_files
+
+                  requirements = TARGET.Memory >= 5000 
+                  
+                  getenv=True
+                  queue 1
+               

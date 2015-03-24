@@ -1,0 +1,18 @@
+Executable = ${RUN_FILES_PATH}run_madgraph_reweight_${JOB_NUM}.sh 
+output = ${CONDOR_OUTPUT_PATH}condor_output_${JOB_NUM}
+error = ${CONDOR_ERROR_PATH}condor_error_${JOB_NUM}
+log = ${CONDOR_LOG_PATH}condor_log_${JOB_NUM}
+                  
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+transfer_input_files = ${PROCESS_TARBALL_PATH}${PROCESS_TARBALL}, ${MADGRAPH_TARBALL_PATH}${MADGRAPH_TARBALL}, ${TRANSFER_FILES_PATH}gen_crossxhtml.py, ${TRANSFER_FILES_PATH}me5_configuration.txt, ${RUN_FILES_PATH}madevent_reweight.cmd, ${SPLIT_FILES_PATH}unweighted_events_${JOB_NUM}.lhe
+
+transfer_output_files = unweighted_events_${JOB_NUM}.lhe.gz
+Universe = vanilla
+notification = Error
+Initialdir = ${WEIGHTED_FILES_PATH} 
+
+request_memory = 8000
+getenv=True
+queue 1
+               

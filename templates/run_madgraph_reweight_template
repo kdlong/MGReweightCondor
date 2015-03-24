@@ -1,0 +1,15 @@
+#!/bin/sh
+tar -xzf ${MADGRAPH_TARBALL} 
+tar -xzf ${PROCESS_TARBALL}
+mv unweighted_events_${JOB_NUM}.lhe unweighted_events.lhe
+gzip unweighted_events.lhe 
+mkdir ${RUN_DIR}
+mv unweighted_events.lhe.gz ${RUN_DIR} 
+mv madevent_reweight.cmd ${PROCESS_DIR} 
+mv me5_configuration.txt ${PROCESS_DIR}/Cards  
+mv gen_crossxhtml.py ${PROCESS_DIR}/bin/internal  
+cd ${PROCESS_DIR} 
+./bin/madevent madevent_reweight.cmd
+cd ..
+cp ${RUN_DIR}unweighted_events.lhe.gz unweighted_events_${JOB_NUM}.lhe.gz
+
