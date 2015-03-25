@@ -1,6 +1,6 @@
 #!/bin/sh
 tar -xzf ${MADGRAPH_TARBALL} 
-tar -xzf ${PROCESS_TARBALL}
+tar -xzf ${PROCESS_TARBALL_NAME}.tar.gz
 mv unweighted_events_${JOB_NUM}.lhe unweighted_events.lhe
 gzip unweighted_events.lhe 
 mkdir ${RUN_DIR}
@@ -11,5 +11,5 @@ mv gen_crossxhtml.py ${PROCESS_DIR}/bin/internal
 cd ${PROCESS_DIR} 
 ./bin/madevent madevent_reweight.cmd
 cd ..
-cp ${RUN_DIR}unweighted_events.lhe.gz unweighted_events_${JOB_NUM}.lhe.gz
+cp ${RUN_DIR}/unweighted_events.lhe.gz unweighted_events_${JOB_NUM}.lhe.gz
 

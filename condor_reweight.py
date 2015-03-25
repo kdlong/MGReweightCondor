@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from ConfigParser import SafeConfigParser
 import subprocess
 import sys
 import splitLHEFile
@@ -21,39 +22,84 @@ import argparse
 # Set paths and specifics of reweight here
 
 def main():
+    cwd = os.getcwd()
+    os.chdir(sys.path[0])
     args = getComLineArgs()
-    print arg.config_file
-    if args.config_file[-3:] == '.py':
-       config_file_name = args.config_file[:-3]
-    __import__(config_file_name)
-    config = sys.modules[config_file_name]
-
-    if not os.path.exists(config.full_process_path):
-        print 'Your configuration file does not list a valid process directory!'
-        exit(1) 
-    lhe_file = config.full_run_path + config.lhe_file_name + ".lhe"
-    split_file_base = config.split_files_path + config.lhe_file_name + '_' 
-    makeDirectories(config.new_directories)
+    config = readConfigFile(args.config_file)
+     
+    reweight_info = config['Reweight Info'] 
+    condor_info = config['Condor Info']
+    lhe_file = "".join([reweight_info['full_run_path'], "/", 
+                       reweight_info['lhe_file_name'], ".lhe"])
+    split_file_base = "".join([condor_info['split_files_path'], "/", 
+                              reweight_info['lhe_file_name'], '_']) 
+    makeDirectories(config['Condor Info'])
     
     if os.path.isfile(lhe_file + '.gz'):
         subprocess.call(["gunzip", lhe_file + '.gz']) 
-
-    if config.kCreateTarball:
-        createProcessTarball(config.process_dir, config.process_tarball_path, 
-                             config.base_directory, config.process_dir + "/Events/*")
-    if config.kSplitFiles:    
-        print 'Spliting lhe file into ' + str(config.num_files) + ' files'
-        splitLHEFile.split(lhe_file, split_file_base, int(config.num_files))
-    
-    makeFileFromTemplate(config.template_files_path, config.run_files_path, 
+    if config['Run Mode']['kCreateTarball'].upper() == "TRUE":
+        createProcessTarball(reweight_info['process_dir'], 
+                reweight_info['process_tarball_path'], 
+                reweight_info['base_directory'], 
+                reweight_info['process_dir'] + "/Events/*")
+    if config['Run Mode']['kSplitFiles'].upper() == "TRUE":    
+        print 'Spliting lhe file into ' + reweight_info['num_files'] + ' files'
+        splitLHEFile.split(lhe_file, split_file_base, int(reweight_info['num_files']))
+   
+    template_files_path = "".join([os.getcwd(), "/templates"])
+    makeFileFromTemplate(template_files_path, condor_info['run_files_path'], 
                          "madevent_reweight", "", ".cmd", 
-                         {'RUN_NAME' : config.run_name}) 
+                         {'RUN_NAME' : reweight_info['run_name']}) 
     
-    for i in range(0, int(config.num_files)):
+    for i in range(0, int(reweight_info['num_files'])):
         job_num = formatNumWithZeros(i, 3)
-        submit_file = split_file_base + job_num + ".lhe"
-        submitCondorJob(config.template_files_path, config.submit_files_path, 
-                        config.run_files_path, job_num, config.dict)
+        submit_file = "".join([split_file_base, "/", job_num, ".lhe"])
+        submitCondorJob(template_files_path, condor_info['submit_files_path'], 
+                        condor_info['run_files_path'], job_num, 
+                        config['Template Info'])
+    os.chdir(cwd)
+    
+def readConfigFile(config_file_name):
+    if not os.path.isfile(config_file_name):
+        config_file_name = "config_files/" + config_file_name.strip("/")[-1]
+    parser = SafeConfigParser()
+    parser.optionxform=str
+    parser.read(config_file_name) 
+     
+    config = {}
+    section = {}
+    for section_name in parser.sections():
+        for name, value in parser.items(section_name):
+            print '  %s is %s' % (name, value)
+            section[name] = value.replace("USERNAME", os.environ["USER"])
+        config[section_name] = section
+        section = {}
+    for key, value in config['Condor Info'].iteritems():
+        config['Condor Info'][key] = "".join([
+            config['Reweight Info']['condor_files_path'],
+            "/",
+            config['Condor Info'][key]]) 
+    for key, value in config['Template Info'].iteritems():
+        if key == 'MADGRAPH_TARBALL':
+            continue
+        if value in config['Reweight Info']:
+            config['Template Info'][key] = config['Reweight Info'][value]
+        elif value in config['Condor Info']:
+            config['Template Info'][key] = config['Condor Info'][value]
+        else:
+            print "Oh no a problem :("
+        if key == '_ROCESS_TARBALL_NAME':
+            g_path
+            config['Template Info'][key] += ".tar.gz"
+    config['Reweight Info']['lhe_file_name'].replace(".lhe", "") 
+    config['Template Info']['TRANSFER_FILES_PATH'] = sys.path[0] + "/transfer_files"
+    
+    print config
+    if not os.path.exists(config['Reweight Info']['full_process_path']):
+        print 'Your configuration file does not list a valid process directory!'
+        exit(1) 
+    
+    return config
 
 # This function returns command line argument #(argument_num). If there is no 
 # argv[argument_num], it asks the user to enter argument_name and returns this value
@@ -101,9 +147,9 @@ def submitCondorJob(template_path, submit_files_path, run_files_path, job_num,
 # <file_name>_template exists in the path template path. fillTemplatedFile
 # is called to create the file.
 def makeFileFromTemplate(template_path, file_path, file_name, indentifier, 
-                         extension, dict) :
-    template = template_path + file_name + "_template"
-    file = file_path + file_name + indentifier + extension
+                         extension, dict):
+    template = "".join([template_path, "/", file_name, "_template"])
+    file = "".join([file_path, "/", file_name, indentifier, extension])
     fillTemplatedFile(template, file, dict)
     return file
 # formats a number to have length formatted_length regardless of it's order of
@@ -114,10 +160,11 @@ def formatNumWithZeros(num, formatted_length):
     while len(formatted_num) < formatted_length:
         formatted_num = "0" + formatted_num
     return formatted_num
-# Creates a directory for each directory path in directory_list. These should be
+# Creates a directory for each directory path in directory_dict. These should be
 # absolute, not relative, paths
-def makeDirectories(directory_list):
-    for directory in directory_list:
+def makeDirectories(directory_dict):
+    for key, directory in directory_dict.iteritems():
+        print directory
         if not os.path.exists(directory): 
             os.makedirs(directory)
 if __name__ == "__main__":
