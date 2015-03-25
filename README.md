@@ -1,11 +1,12 @@
 # MGReweightCondor
-Scripts from running MadGraph Reweight on condor by dividing LHE files
 
 The reweight function of MadGraph first calculates new matrix elements for the new model parameters and then forms an event weight by the square of the ratios (more info via [the MadGraph Wiki](https://cp3.irmp.ucl.ac.be/projects/madgraph/wiki/Reweight). It evaluates these for each event and writes these new events to the file. It's nowhere near as computationally intensive as the full calculation, so it is not set up to be parallel or able to run on condor. The problem is that for a large number of events and several different weights it can add up. For 100,000 events, 20 weights at 1 hour each is a stretch to run locally and for ~ 1 million events it's unreasonable. 
 
 This script solves this issue by splitting the LHE file into pieces and running the process on each split file separately on condor. It's not computationally efficient but it's the simplest solution. MadGraph runs exactly like it would on the server, the advantage is that Condor allows you to run on many separate jobs simultaneously rather than on one sequentially.
 
 You interact with the program via a config file. A heavily documented example is [config_files/example.cfg](https://github.com/kdlong/MGReweightCondor/blob/master/config_files/example.cfg). It implements the python [ConfigParser](https://docs.python.org/2/library/configparser.html) syntax, which is largely straightforward. Note that interpolation of value (included the value of another variable in a variable) is supported by the syntax value = new_text%(old_value)snew_text ONLY FOR VALUES WITHIN THE SAME SECTION!
+
+NOTE: The setup.sh script downloads the MadGraph version 2.2.3 tarball from the web and places in in the `transfer_files` folder. If you need a model not in MadGraph by default, you should instead create a tarball with your model in it. Make sure your directory is named MG5_aMC_v2_2_3 AND IS PLACED IN THE `transfer_files` DIRECTORY!  If you are at UW, you can copy tarball  of MG with the SM_LS0_LS1_UFO and SM_LT012_UFO models from `/nfs_kdlong/nfs_scratch/condor_reweight/transfer_files/madgraph.tar.gz`
 
 Call the program as:
 
@@ -21,8 +22,10 @@ The basic procedure of the program is:
 4. Submit the job to condor for each separate split LHE file
 
 A few notes and tips:
+
 1. If a job you submit has a problem or is held, you should first check the condor_error/condor_error_XXX and condor_output/condor_output_XXX file corresponding to that job (placed in the condor_run_files diretory, by default in the Events/run_0X directory of your process). If the job is running and you want to see if it is running correctly, find the job ID from condor_q and use condor_ssh_to_job <job_num>. This will ssh you to the computer on which your job is running. You can look at its output by less _condor_stdout and its error messages by less _condor_stderr. You can also check for a hold reason on a job by running condor_q -hold <jobID>. If this returns that a file to transfer is missing, for example, you can locate that file and run condor_release <jobID> to continue running.
 
 2. The line requirement = memory >= 8000 in the submit_condor_template file stipulates that the jobs will only run on condor machines which have > 8GB or RAM. This is the reason that these jobs will be in an idle state for much longer than a usual condor submission. This means that jobs of about 10,000 events may not always run much faster using this technique, but it is important to run condor rather than the login machines regardless, as those machines really aren't set up for one user to run a 8GB process for days.
 
 3. If you would like to recombine the weighted lhe files into a single file after all the condor processes complete, just run the script MGReweightCondor/merge_files/merge_weighted_files.py in the directory where all the weighted_lhe_files are placed (by default in weighted_lhe_files in your run directory)
+
