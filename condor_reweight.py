@@ -51,7 +51,7 @@ def main():
                          "madevent_reweight", "", ".cmd", 
                          {'RUN_NAME' : reweight_info['run_name']}) 
     
-    for i in range(0, int(reweight_info['num_files'])):
+    for i in range(0, 10):#int(reweight_info['num_files'])):
         job_num = formatNumWithZeros(i, 3)
         submit_file = "".join([split_file_base, "/", job_num, ".lhe"])
         submitCondorJob(template_files_path, condor_info['submit_files_path'], 
@@ -70,7 +70,6 @@ def readConfigFile(config_file_name):
     section = {}
     for section_name in parser.sections():
         for name, value in parser.items(section_name):
-            print '  %s is %s' % (name, value)
             section[name] = value.replace("USERNAME", os.environ["USER"])
         config[section_name] = section
         section = {}
@@ -94,7 +93,6 @@ def readConfigFile(config_file_name):
     config['Reweight Info']['lhe_file_name'].replace(".lhe", "") 
     config['Template Info']['TRANSFER_FILES_PATH'] = sys.path[0] + "/transfer_files"
     
-    print config
     if not os.path.exists(config['Reweight Info']['full_process_path']):
         print 'Your configuration file does not list a valid process directory!'
         exit(1) 

@@ -152,7 +152,7 @@ automatic_html_opening = False
 # syscalc_path = ./SysCalc
 
 
-mg5_path = ../MG5_aMC_v2_1_2 
+mg5_path = ../MG5_aMC_v2_2_3 
 
 # MG5 MAIN DIRECTORY
-mg5_path = ../MG5_aMC_v2_1_2 
+mg5_path = ../MG5_aMC_v2_2_3 
