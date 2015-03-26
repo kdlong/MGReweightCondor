@@ -51,17 +51,34 @@ def main():
                          "madevent_reweight", "", ".cmd", 
                          {'RUN_NAME' : reweight_info['run_name']}) 
     
-    for i in range(0, 10):#int(reweight_info['num_files'])):
+
+    for i in getFileRange(args, int(reweight_info['num_files'])):
         job_num = formatNumWithZeros(i, 3)
         submit_file = "".join([split_file_base, "/", job_num, ".lhe"])
         submitCondorJob(template_files_path, condor_info['submit_files_path'], 
                         condor_info['run_files_path'], job_num, 
                         config['Template Info'])
     os.chdir(cwd)
-    
+
+def getFileRange(args, num_files):
+    file_range = [int(x.strip()) for x in args.submit_range.split(",")] 
+    if file_range[0] < 0 or file_range[1] < 0 or file_range[0] > num_files:
+            print "Invalid range, please enter values between 0 and %i " \
+                  "formatted as min, max" % num_files
+            exit(0)
+    if file_range[1] == 0:
+        file_range[1] = num_files 
+    elif file_range[1] > num_files:
+        file_range[1] = num_files
+        print "There are only %i files! Changed range to %i, %i" \
+            % (num_files, file_range[0], file_range[1])
+    return range(file_range[0], file_range[1]) 
 def readConfigFile(config_file_name):
     if not os.path.isfile(config_file_name):
-        config_file_name = "config_files/" + config_file_name.strip("/")[-1]
+        config_file_name = "config_files/" + config_file_name.split("/")[-1]
+        if not os.path.isfile(config_file_name):
+            print "Could not open config file %s" % config_file_name
+            exit(0)
     parser = SafeConfigParser()
     parser.optionxform=str
     parser.read(config_file_name) 
@@ -105,6 +122,9 @@ def getComLineArgs():
     parser = argparse.ArgumentParser()
     parser.add_argument("config_file", type=str, help="Configuration file name" 
                         " (stored in config_files directory)")
+    parser.add_argument("-r", "--submit_range", type=str, default="0, 0", 
+                        help='Submit only files in the range x, y (call as -t '
+                        '"x, y") Useful for debugging or resubmitting failed jobs')
     return parser.parse_args()
 # This function creates a new file out_file_name by replacing all keys in
 # keys in template_file_name of the form ${KEY_NAME} with the value indicated by
@@ -162,7 +182,6 @@ def formatNumWithZeros(num, formatted_length):
 # absolute, not relative, paths
 def makeDirectories(directory_dict):
     for key, directory in directory_dict.iteritems():
-        print directory
         if not os.path.exists(directory): 
             os.makedirs(directory)
 if __name__ == "__main__":
