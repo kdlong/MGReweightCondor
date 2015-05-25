@@ -5,7 +5,7 @@ log = ${CONDOR_LOG_PATH}/condor_log_${JOB_NUM}
                   
 should_transfer_files = YES
 when_to_transfer_output = ON_EXIT
-transfer_input_files = ${PROCESS_TARBALL_PATH}/${PROCESS_TARBALL_NAME}.tar.gz, ${TRANSFER_FILES_PATH}/${MADGRAPH_TARBALL}, ${TRANSFER_FILES_PATH}/gen_crossxhtml.py, ${TRANSFER_FILES_PATH}/me5_configuration.txt, ${RUN_FILES_PATH}/madevent_reweight.cmd, ${SPLIT_FILES_PATH}/unweighted_events_${JOB_NUM}.lhe
+transfer_input_files = ${PROCESS_TARBALL_PATH}/${PROCESS_TARBALL_NAME}.tar.gz, ${TRANSFER_FILES_PATH}/${MADGRAPH_TARBALL}, ${TRANSFER_FILES_PATH}/me5_configuration.txt, ${RUN_FILES_PATH}/madevent_reweight.cmd, ${SPLIT_FILES_PATH}/unweighted_events_${JOB_NUM}.lhe
 
 transfer_output_files = unweighted_events_${JOB_NUM}.lhe.gz
 Universe = vanilla
